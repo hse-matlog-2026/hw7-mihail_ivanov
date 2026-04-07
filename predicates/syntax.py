@@ -210,6 +210,13 @@ class Term:
             A set of all constant names used in the current term.
         """
         # Task 7.5a
+        res = set()
+        if is_constant(self.root):
+            res.add(self.root)
+        elif is_function(self.root):
+            for arg in self.arguments:
+                res |= arg.constants()
+        return res
 
     def variables(self) -> Set[str]:
         """Finds all variable names in the current term.
@@ -218,6 +225,13 @@ class Term:
             A set of all variable names used in the current term.
         """
         # Task 7.5b
+        res = set()
+        if is_variable(self.root):
+            res.add(self.root)
+        elif is_function(self.root):
+            for arg in self.arguments:
+                res |= arg.variables()
+        return res
 
     def functions(self) -> Set[Tuple[str, int]]:
         """Finds all function names in the current term, along with their
@@ -228,6 +242,12 @@ class Term:
             all function names used in the current term.
         """
         # Task 7.5c
+        res = set()
+        if is_function(self.root):
+            res.add((self.root, len(self.arguments)))
+            for arg in self.arguments:
+                res |= arg.functions()
+        return res
 
     def substitute(self, substitution_map: Mapping[str, Term],
                    forbidden_variables: AbstractSet[str] = frozenset()) -> Term:
