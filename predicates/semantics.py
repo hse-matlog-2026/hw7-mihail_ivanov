@@ -183,6 +183,33 @@ class Model(Generic[T]):
             assert relation in self.relation_interpretations and \
                    self.relation_arities[relation] in {-1, arity}
         # Task 7.8
+        if is_equality(formula.root):
+            return self.evaluate_term(formula.arguments[0], assignment) == \
+                self.evaluate_term(formula.arguments[1], assignment)
+        elif is_relation(formula.root):
+            args = tuple(self.evaluate_term(arg, assignment) for arg in formula.arguments)
+            return args in self.relation_interpretations[formula.root]
+        elif is_unary(formula.root):
+            return not self.evaluate_formula(formula.first, assignment)
+        elif is_binary(formula.root):
+            val1 = self.evaluate_formula(formula.first, assignment)
+            val2 = self.evaluate_formula(formula.second, assignment)
+            if formula.root == '&':
+                return val1 and val2
+            elif formula.root == '|':
+                return val1 or val2
+            elif formula.root == '->':
+                return not val1 or val2
+        elif is_quantifier(formula.root):
+            for v in self.universe:
+                new_assignment = dict(assignment)
+                new_assignment[formula.variable] = v
+                val = self.evaluate_formula(formula.statement, new_assignment)
+                if formula.root == 'A' and not val:
+                    return False
+                if formula.root == 'E' and val:
+                    return True
+            return formula.root == 'A'
 
     def is_model_of(self, formulas: AbstractSet[Formula]) -> bool:
         """Checks if the current model is a model of the given formulas.
