@@ -15,6 +15,8 @@ from logic_utils import fresh_variable_name_generator, frozen, \
 
 from propositions.syntax import Formula as PropositionalFormula, \
                                 is_variable as is_propositional_variable
+import re
+
 
 class ForbiddenVariableError(Exception):
     """Raised by `Term.substitute` and `Formula.substitute` when a substituted
@@ -114,6 +116,9 @@ class Term:
             The standard string representation of the current term.
         """
         # Task 7.1
+        if self.arguments is None:
+            return self.root
+        return self.root + '(' + ','.join(repr(arg) for arg in self.arguments) + ')'
 
     def __eq__(self, other: object) -> bool:
         """Compares the current term with the given one.
@@ -157,6 +162,23 @@ class Term:
             that entire name (and not just a part of it, such as ``'x1'``).
         """
         # Task 7.3a
+        m = re.match(r'[a-zA-Z0-9_]+', string)
+        name = m.group(0)
+        string = string[len(name):]
+        if is_constant(name) or is_variable(name):
+            return Term(name), string
+        if is_function(name):
+            string = string[1:]
+            args = []
+            while True:
+                term, string = Term._parse_prefix(string)
+                args.append(term)
+                if string[0] == ')':
+                    string = string[1:]
+                    break
+                string = string[1:]
+            return Term(name, args), string
+
 
     @staticmethod
     def parse(string: str) -> Term:
@@ -169,6 +191,9 @@ class Term:
             A term whose standard string representation is the given string.
         """
         # Task 7.3b
+        term, remaining = Term._parse_prefix(string)
+        assert remaining == ''
+        return term
 
     def constants(self) -> Set[str]:
         """Finds all constant names in the current term.
@@ -381,6 +406,16 @@ class Formula:
             The standard string representation of the current formula.
         """
         # Task 7.2
+        if is_equality(self.root):
+            return repr(self.arguments[0]) + '=' + repr(self.arguments[1])
+        elif is_relation(self.root):
+            return self.root + '(' + ','.join(repr(arg) for arg in self.arguments) + ')'
+        elif is_unary(self.root):
+            return '~' + repr(self.first)
+        elif is_binary(self.root):
+            return '(' + repr(self.first) + self.root + repr(self.second) + ')'
+        elif is_quantifier(self.root):
+            return self.root + self.variable + '[' + repr(self.statement) + ']'
 
     def __eq__(self, other: object) -> bool:
         """Compares the current formula with the given one.
