@@ -234,3 +234,20 @@ class Model(Generic[T]):
                 assert relation in self.relation_interpretations and \
                        self.relation_arities[relation] in {-1, arity}
         # Task 7.9
+        def get_assignments(free_vars, universe):
+            if not free_vars:
+                yield {}
+                return
+            var = free_vars[0]
+            for val in universe:
+                for assign in get_assignments(free_vars[1:], universe):
+                    res = {var: val}
+                    res.update(assign)
+                    yield res
+
+        for formula in formulas:
+            free_vars = list(formula.free_variables())
+            for assignment in get_assignments(free_vars, self.universe):
+                if not self.evaluate_formula(formula, assignment):
+                    return False
+        return True
