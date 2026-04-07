@@ -161,12 +161,15 @@ class Term:
             that entire name (and not just a part of it, such as ``'x1'``).
         """
         # Task 7.3a
-        name = ''
-        for c in string:
-            if c.isalnum() or c == '_':
-                name += c
-            else:
-                break
+        if string[0] == '_':
+            name = '_'
+        else:
+            name = ''
+            for c in string:
+                if c.isalnum():
+                    name += c
+                else:
+                    break
 
         remainder = string[len(name):]
 
@@ -181,7 +184,7 @@ class Term:
                 if remainder and remainder[0] == ')':
                     remainder = remainder[1:]
                     break
-                if remainder:
+                if remainder and remainder[0] == ',':
                     remainder = remainder[1:]
             return Term(name, args), remainder
 
