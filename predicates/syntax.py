@@ -562,6 +562,18 @@ class Formula:
             A set of all constant names used in the current formula.
         """
         # Task 7.6a
+        res = set()
+        if is_equality(self.root) or is_relation(self.root):
+            for arg in self.arguments:
+                res |= arg.constants()
+        elif is_unary(self.root):
+            res |= self.first.constants()
+        elif is_binary(self.root):
+            res |= self.first.constants()
+            res |= self.second.constants()
+        elif is_quantifier(self.root):
+            res |= self.statement.constants()
+        return res
 
     def variables(self) -> Set[str]:
         """Finds all variable names in the current formula.
@@ -570,6 +582,19 @@ class Formula:
             A set of all variable names used in the current formula.
         """
         # Task 7.6b
+        res = set()
+        if is_equality(self.root) or is_relation(self.root):
+            for arg in self.arguments:
+                res |= arg.variables()
+        elif is_unary(self.root):
+            res |= self.first.variables()
+        elif is_binary(self.root):
+            res |= self.first.variables()
+            res |= self.second.variables()
+        elif is_quantifier(self.root):
+            res.add(self.variable)
+            res |= self.statement.variables()
+        return res
 
     def free_variables(self) -> Set[str]:
         """Finds all variable names that are free in the current formula.
@@ -579,6 +604,20 @@ class Formula:
             only within a scope of a quantification on that variable name.
         """
         # Task 7.6c
+        res = set()
+        if is_equality(self.root) or is_relation(self.root):
+            for arg in self.arguments:
+                res |= arg.variables()
+        elif is_unary(self.root):
+            res |= self.first.free_variables()
+        elif is_binary(self.root):
+            res |= self.first.free_variables()
+            res |= self.second.free_variables()
+        elif is_quantifier(self.root):
+            stmt_free = self.statement.free_variables()
+            stmt_free.discard(self.variable)
+            res |= stmt_free
+        return res
 
     def functions(self) -> Set[Tuple[str, int]]:
         """Finds all function names in the current formula, along with their
@@ -589,6 +628,18 @@ class Formula:
             all function names used in the current formula.
         """
         # Task 7.6d
+        res = set()
+        if is_equality(self.root) or is_relation(self.root):
+            for arg in self.arguments:
+                res |= arg.functions()
+        elif is_unary(self.root):
+            res |= self.first.functions()
+        elif is_binary(self.root):
+            res |= self.first.functions()
+            res |= self.second.functions()
+        elif is_quantifier(self.root):
+            res |= self.statement.functions()
+        return res
 
     def relations(self) -> Set[Tuple[str, int]]:
         """Finds all relation names in the current formula, along with their
@@ -599,6 +650,17 @@ class Formula:
             all relation names used in the current formula.
         """
         # Task 7.6e
+        res = set()
+        if is_relation(self.root):
+            res.add((self.root, len(self.arguments)))
+        if is_unary(self.root):
+            res |= self.first.relations()
+        elif is_binary(self.root):
+            res |= self.first.relations()
+            res |= self.second.relations()
+        elif is_quantifier(self.root):
+            res |= self.statement.relations()
+        return res
 
     def substitute(self, substitution_map: Mapping[str, Term],
                    forbidden_variables: AbstractSet[str] = frozenset()) -> \
