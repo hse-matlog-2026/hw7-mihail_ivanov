@@ -15,7 +15,6 @@ from logic_utils import fresh_variable_name_generator, frozen, \
 
 from propositions.syntax import Formula as PropositionalFormula, \
                                 is_variable as is_propositional_variable
-import re
 
 
 class ForbiddenVariableError(Exception):
@@ -162,12 +161,16 @@ class Term:
             that entire name (and not just a part of it, such as ``'x1'``).
         """
         # Task 7.3a
-        m = re.match(r'[a-zA-Z0-9_]+', string)
-        name = m.group(0)
+        name = ''
+        for c in string:
+            if c.isalnum() or c == '_':
+                name += c
+            else:
+                break
         string = string[len(name):]
         if is_constant(name) or is_variable(name):
             return Term(name), string
-        if is_function(name):
+        elif is_function(name):
             string = string[1:]
             args = []
             while True:
@@ -192,6 +195,7 @@ class Term:
         """
         # Task 7.3b
         term, remaining = Term._parse_prefix(string)
+        assert remaining == ''
         return term
 
     def constants(self) -> Set[str]:
@@ -474,18 +478,27 @@ class Formula:
             return Formula(op, first, second), string[1:]
         elif string[0] in 'AE':
             op = string[0]
-            m = re.match(r'[a-zA-Z0-9_]+', string[1:])
-            var = m.group(0)
+            var = ''
+            for c in string[1:]:
+                if c.isalnum() or c == '_':
+                    var += c
+                else:
+                    break
             string = string[1 + len(var) + 1:]
             statement, string = Formula._parse_prefix(string)
             return Formula(op, var, statement), string[1:]
 
-        m = re.match(r'[a-zA-Z0-9_]+', string)
-        if m and is_relation(m.group(0)):
-            rel = m.group(0)
-            string = string[len(rel):]
+        name = ''
+        for c in string:
+            if c.isalnum() or c == '_':
+                name += c
+            else:
+                break
+
+        if name and is_relation(name):
+            string = string[len(name):]
             if string.startswith('()'):
-                return Formula(rel, []), string[2:]
+                return Formula(name, []), string[2:]
             string = string[1:]
             args = []
             while True:
@@ -495,7 +508,7 @@ class Formula:
                     string = string[1:]
                     break
                 string = string[1:]
-            return Formula(rel, args), string
+            return Formula(name, args), string
         else:
             term1, string = Term._parse_prefix(string)
             string = string[1:]
@@ -514,6 +527,7 @@ class Formula:
         """
         # Task 7.4b
         formula, remaining = Formula._parse_prefix(string)
+        assert remaining == ''
         return formula
 
     def constants(self) -> Set[str]:
