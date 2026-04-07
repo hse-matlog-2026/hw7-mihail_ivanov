@@ -116,9 +116,9 @@ class Term:
             The standard string representation of the current term.
         """
         # Task 7.1
-        if self.arguments is None:
-            return self.root
-        return self.root + '(' + ','.join(repr(arg) for arg in self.arguments) + ')'
+        if is_function(self.root):
+            return self.root + '(' + ','.join(repr(arg) for arg in self.arguments) + ')'
+        return self.root
 
     def __eq__(self, other: object) -> bool:
         """Compares the current term with the given one.
@@ -162,33 +162,12 @@ class Term:
             that entire name (and not just a part of it, such as ``'x1'``).
         """
         # Task 7.3a
-        if string[0] == '~':
-            first, string = Formula._parse_prefix(string[1:])
-            return Formula('~', first), string
-        elif string[0] == '(':
-            first, string = Formula._parse_prefix(string[1:])
-            if string.startswith('->'):
-                op = '->'
-                string = string[2:]
-            else:
-                op = string[0]
-                string = string[1:]
-            second, string = Formula._parse_prefix(string)
-            return Formula(op, first, second), string[1:]
-        elif string[0] in 'AE':
-            op = string[0]
-            m = re.match(r'[a-zA-Z0-9_]+', string[1:])
-            var = m.group(0)
-            string = string[1 + len(var) + 1:]
-            statement, string = Formula._parse_prefix(string)
-            return Formula(op, var, statement), string[1:]
-
         m = re.match(r'[a-zA-Z0-9_]+', string)
-        if m and is_relation(m.group(0)):
-            rel = m.group(0)
-            string = string[len(rel):]
-            if string.startswith('()'):
-                return Formula(rel, []), string[2:]
+        name = m.group(0)
+        string = string[len(name):]
+        if is_constant(name) or is_variable(name):
+            return Term(name), string
+        if is_function(name):
             string = string[1:]
             args = []
             while True:
@@ -198,12 +177,7 @@ class Term:
                     string = string[1:]
                     break
                 string = string[1:]
-            return Formula(rel, args), string
-        else:
-            term1, string = Term._parse_prefix(string)
-            string = string[1:]
-            term2, string = Term._parse_prefix(string)
-            return Formula('=', [term1, term2]), string
+            return Term(name, args), string
 
 
     @staticmethod
@@ -217,9 +191,8 @@ class Term:
             A term whose standard string representation is the given string.
         """
         # Task 7.3b
-        formula, remaining = Formula._parse_prefix(string)
-        assert remaining == ''
-        return formula
+        term, remaining = Term._parse_prefix(string)
+        return term
 
     def constants(self) -> Set[str]:
         """Finds all constant names in the current term.
@@ -486,6 +459,48 @@ class Formula:
             that entire name (and not just a part of it, such as ``'f(y)=x1'``).
         """
         # Task 7.4a
+        if string[0] == '~':
+            first, string = Formula._parse_prefix(string[1:])
+            return Formula('~', first), string
+        elif string[0] == '(':
+            first, string = Formula._parse_prefix(string[1:])
+            if string.startswith('->'):
+                op = '->'
+                string = string[2:]
+            else:
+                op = string[0]
+                string = string[1:]
+            second, string = Formula._parse_prefix(string)
+            return Formula(op, first, second), string[1:]
+        elif string[0] in 'AE':
+            op = string[0]
+            m = re.match(r'[a-zA-Z0-9_]+', string[1:])
+            var = m.group(0)
+            string = string[1 + len(var) + 1:]
+            statement, string = Formula._parse_prefix(string)
+            return Formula(op, var, statement), string[1:]
+
+        m = re.match(r'[a-zA-Z0-9_]+', string)
+        if m and is_relation(m.group(0)):
+            rel = m.group(0)
+            string = string[len(rel):]
+            if string.startswith('()'):
+                return Formula(rel, []), string[2:]
+            string = string[1:]
+            args = []
+            while True:
+                term, string = Term._parse_prefix(string)
+                args.append(term)
+                if string[0] == ')':
+                    string = string[1:]
+                    break
+                string = string[1:]
+            return Formula(rel, args), string
+        else:
+            term1, string = Term._parse_prefix(string)
+            string = string[1:]
+            term2, string = Term._parse_prefix(string)
+            return Formula('=', [term1, term2]), string
 
     @staticmethod
     def parse(string: str) -> Formula:
@@ -498,6 +513,8 @@ class Formula:
             A formula whose standard string representation is the given string.
         """
         # Task 7.4b
+        formula, remaining = Formula._parse_prefix(string)
+        return formula
 
     def constants(self) -> Set[str]:
         """Finds all constant names in the current formula.
