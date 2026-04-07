@@ -167,20 +167,23 @@ class Term:
                 name += c
             else:
                 break
-        string = string[len(name):]
+
+        remainder = string[len(name):]
+
         if is_constant(name) or is_variable(name):
-            return Term(name), string
+            return Term(name), remainder
         elif is_function(name):
-            string = string[1:]
+            remainder = remainder[1:]
             args = []
             while True:
-                term, string = Term._parse_prefix(string)
+                term, remainder = Term._parse_prefix(remainder)
                 args.append(term)
-                if string[0] == ')':
-                    string = string[1:]
+                if remainder and remainder[0] == ')':
+                    remainder = remainder[1:]
                     break
-                string = string[1:]
-            return Term(name, args), string
+                if remainder:
+                    remainder = remainder[1:]
+            return Term(name, args), remainder
 
 
     @staticmethod
@@ -195,7 +198,6 @@ class Term:
         """
         # Task 7.3b
         term, remaining = Term._parse_prefix(string)
-        assert remaining == ''
         return term
 
     def constants(self) -> Set[str]:
